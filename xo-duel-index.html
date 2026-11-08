@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>X-O Duel</title>
+<style>
+:root{--bg:#f4f5fb;--card:#fff;--text:#1d2030;--muted:#6b7088;--line:#dfe2ef;--x:#e5484d;--o:#2f7df6;--accent:#6c4cf1;--win:#d9f7e4;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14151f;--card:#1e2030;--text:#eef0fa;--muted:#9aa0bb;--line:#33364d;--x:#ff6b70;--o:#6aa5ff;--accent:#8f77ff;--win:#1f4a33;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#14151f;--card:#1e2030;--text:#eef0fa;--muted:#9aa0bb;--line:#33364d;--x:#ff6b70;--o:#6aa5ff;--accent:#8f77ff;--win:#1f4a33;color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh;display:flex;justify-content:center;align-items:center;padding:16px}
+.card{background:var(--card);border-radius:20px;padding:24px;width:100%;max-width:400px;box-shadow:0 6px 24px rgba(0,0,0,.12);text-align:center}
+h1{margin:0 0 4px;font-size:1.6rem}
+.sub{color:var(--muted);margin:0 0 20px;font-size:.95rem}
+button{font:inherit;cursor:pointer;border:0;border-radius:12px}
+.btn{display:block;width:100%;padding:14px;margin:10px 0;background:var(--accent);color:#fff;font-weight:600;font-size:1.05rem}
+.btn.alt{background:transparent;color:var(--text);border:2px solid var(--line)}
+.seg{display:flex;gap:8px;margin:6px 0 14px}
+.seg button{flex:1;padding:10px;background:transparent;border:2px solid var(--line);color:var(--text)}
+.seg button.on{border-color:var(--accent);background:var(--accent);color:#fff}
+.hide{display:none!important}
+.score{display:flex;justify-content:space-between;gap:8px;margin-bottom:12px}
+.pl{flex:1;padding:10px 6px;border-radius:12px;border:2px solid var(--line)}
+.pl.turn{border-color:var(--accent)}
+.pl b{display:block;font-size:1.8rem}
+.pl.x b{color:var(--x)}.pl.o b{color:var(--o)}
+.pl span{font-size:.8rem;color:var(--muted)}
+.round{font-weight:600;margin-bottom:4px}
+.status{min-height:1.5em;margin:8px 0 12px;color:var(--muted)}
+.board{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 auto 14px;max-width:320px}
+.cell{aspect-ratio:1;background:var(--bg);border:2px solid var(--line);font-size:2.8rem;font-weight:700;color:var(--text)}
+.cell.x{color:var(--x)}.cell.o{color:var(--o)}
+.cell.win{background:var(--win)}
+.cell:disabled{cursor:default}
+.dots{display:flex;justify-content:center;gap:8px;margin-bottom:10px}
+.dot{width:12px;height:12px;border-radius:50%;background:var(--line)}
+.dot.x{background:var(--x)}.dot.o{background:var(--o)}.dot.cur{outline:2px solid var(--accent);outline-offset:2px}
+.big{font-size:1.5rem;margin:8px 0}
+.seg{flex-wrap:wrap}.seg button{font-size:.85rem;min-width:70px}
+input{width:100%;padding:12px;margin:0 0 8px;border-radius:12px;border:2px solid var(--line);background:var(--bg);color:var(--text);font:inherit}
+table{width:100%;border-collapse:collapse;margin-bottom:12px}th,td{padding:8px 4px;border-bottom:1px solid var(--line);text-align:center}td:nth-child(2){text-align:left}th{color:var(--muted);font-size:.8rem}
+</style>
+</head>
+<body>
+<div id="pvgate" style="position:fixed;inset:0;z-index:99;display:flex;align-items:center;justify-content:center;padding:16px;background:var(--bg,#eef1fb)"><div style="background:var(--card,#fff);color:var(--text,#1d2030);border-radius:20px;padding:24px;max-width:360px;width:100%;text-align:center;box-shadow:0 6px 24px rgba(0,0,0,.25);font-family:system-ui,sans-serif"><h2 style="margin:0 0 8px">X-O Duel</h2><p id="pvmsg" style="margin:0 0 14px;opacity:.75">Loading…</p><button id="pvbtn" style="display:none;width:100%;padding:14px;border:0;border-radius:12px;background:var(--accent,#6c4cf1);color:#fff;font:inherit;font-weight:600;font-size:1.05rem">🔐 Sign in with Google</button><a href="https://playversegames.github.io/clue-rush/" style="display:block;margin-top:14px;color:inherit;opacity:.6;text-decoration:none;font-size:.9rem">← Playverse</a></div></div>
+<div class="card">
+  <section id="menu">
+<a href="https://playversegames.github.io/clue-rush/" style="display:block;text-align:left;margin-bottom:8px;color:var(--muted,#6b7088);text-decoration:none;font-size:.9rem">← Playverse</a>
+    <h1>X-O Duel</h1>
+    <p class="sub">Best of 3 rounds</p>
+    <input id="p1" maxlength="12" placeholder="Player 1 name (X)" autocomplete="off">
+    <input id="p2" maxlength="12" placeholder="Player 2 name – same phone only" autocomplete="off">
+    <button class="btn" id="pBot">Play with Bot</button>
+    <div id="diff" class="hide">
+      <div class="seg"><button data-d="easy">Easy</button><button data-d="medium" class="on">Medium</button><button data-d="hard">Hard</button></div>
+      <button class="btn" id="goBot">Start</button>
+    </div>
+    <button class="btn" id="pOnline">🌐 Play Online</button>
+    <div id="onl" class="hide">
+      <button class="btn" id="oCreate">Create room</button>
+      <input id="oCode" maxlength="4" placeholder="Room code" autocomplete="off" autocapitalize="characters">
+      <button class="btn alt" id="oJoin">Join room</button>
+      <p class="sub" id="oMsg"></p>
+    </div>
+    <button class="btn alt" id="pFriend">Same phone (2 players)</button>
+    <button class="btn alt" id="pLB">🏆 Leaderboard</button>
+  </section>
+
+  <section id="lb" class="hide">
+    <h1>🏆 Leaderboard</h1>
+    <p class="sub">Online · all signed-in players</p>
+    <div style="overflow-x:auto"><table><thead><tr><th>#</th><th>Name</th><th>Wins</th><th>Games</th><th>Win %</th></tr></thead><tbody id="lbBody"></tbody></table></div>
+    <p class="sub hide" id="lbEmpty">No games yet – play a match!</p>
+    <button class="btn" id="lbBack">Back</button>
+  </section>
+
+  <section id="game" class="hide">
+    <div class="sub hide" id="rcode" style="text-align:center;font-weight:700"></div>
+    <button class="btn alt hide" id="invite">Share invite link</button>
+    <div class="round" id="round"></div>
+    <div class="dots" id="dots"></div>
+    <div class="score">
+      <div class="pl x" id="plX"><span id="nX">Player X</span><b id="sX">0</b></div>
+      <div class="pl o" id="plO"><span id="nO">Player O</span><b id="sO">0</b></div>
+    </div>
+    <div class="status" id="status"></div>
+    <div class="board" id="board"></div>
+    <button class="btn" id="next">Next Round</button>
+    <button class="btn alt" id="quit">Main Menu</button>
+  </section>
+</div>
+
+<script>
+const LINES=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+let mode='friend',diff='medium',board,turn,scores,round,results,over,locked;
+let full=false,seat='X',rc=null,unsub=null,lastRec=-2;
+const pn={X:'Player 1',O:'Player 2'};
+const BLUNDER={easy:0.7,medium:0.4,hard:0.15};
+const $=id=>document.getElementById(id);
+
+function winnerOf(b){
+  for(const l of LINES){const[a,c,d]=l;if(b[a]&&b[a]===b[c]&&b[a]===b[d])return{p:b[a],line:l};}
+  return null;
+}
+function minimax(b,player,me){
+  const w=winnerOf(b);
+  if(w)return w.p===me?10:-10;
+  if(b.every(Boolean))return 0;
+  const other=player==='X'?'O':'X';
+  let best=player===me?-99:99;
+  for(let i=0;i<9;i++){
+    if(b[i])continue;
+    b[i]=player;
+    const s=minimax(b,other,me);
+    b[i]=null;
+    best=player===me?Math.max(best,s):Math.min(best,s);
+  }
+  return best;
+}
+function botMove(){
+  const free=[...Array(9).keys()].filter(i=>!board[i]);
+  if(Math.random()<BLUNDER[diff])return free[Math.floor(Math.random()*free.length)];
+  let best=-99,moves=[];
+  for(const i of free){
+    board[i]='O';
+    const s=minimax(board,'X','O');
+    board[i]=null;
+    if(s>best){best=s;moves=[i];}else if(s===best)moves.push(i);
+  }
+  return moves[Math.floor(Math.random()*moves.length)];
+}
+
+function startMatch(){
+  scores={X:0,O:0};round=1;results=[];
+  const a=$('p1').value.trim().slice(0,12),b=$('p2').value.trim().slice(0,12);
+  pn.X=a||'Player 1';pn.O=mode==='bot'?'Bot':(b||'Player 2');
+  if(mode!=='bot'&&pn.O.toLowerCase()===pn.X.toLowerCase())pn.O+=' 2';
+  $('nX').textContent=pn.X;
+  $('nO').textContent=pn.O;
+  $('menu').classList.add('hide');$('game').classList.remove('hide');
+  newRound();
+}
+function newRound(){
+  board=Array(9).fill(null);over=false;locked=false;
+  turn=(round+results.filter(r=>r==='T').length)%2===1?'X':'O'; // alternate who starts
+  $('next').classList.add('hide');
+  render();
+  if(mode==='bot'&&turn==='O')botTurn();
+}
+function render(win){
+  const bd=$('board');bd.innerHTML='';
+  board.forEach((v,i)=>{
+    const c=document.createElement('button');
+    c.className='cell'+(v?' '+v.toLowerCase():'')+(win&&win.includes(i)?' win':'');
+    c.textContent=v||'';
+    c.disabled=over||!!v||(mode==='bot'&&turn==='O')||(mode==='online'&&(!full||turn!==seat));
+    c.setAttribute('aria-label','Cell '+(i+1));
+    c.onclick=()=>play(i);
+    bd.appendChild(c);
+  });
+  $('sX').textContent=scores.X;$('sO').textContent=scores.O;
+  $('round').textContent=over&&matchDone()?'Final result':'Round '+round+' of 3';
+  $('plX').classList.toggle('turn',!over&&turn==='X');
+  $('plO').classList.toggle('turn',!over&&turn==='O');
+  const d=$('dots');d.innerHTML='';
+  for(let i=0;i<3;i++){
+    const e=document.createElement('div');
+    const r=results[i];
+    e.className='dot'+(r==='X'?' x':r==='O'?' o':'')+(i===round-1&&!matchDone()?' cur':'');
+    d.appendChild(e);
+  }
+  if(!over)$('status').textContent=mode==='online'?(!full?'Waiting for a friend to join…':(turn===seat?'Your turn':pn[turn]+'’s turn')):pn[turn]+(mode==='bot'&&turn==='O'?' is thinking…':'’s turn');
+}
+function matchDone(){return results.filter(r=>r!=='T').length>=3;}
+function play(i){
+  if(mode==='online'){
+    if(over||!full||turn!==seat||board[i])return;
+    const b=board.slice();b[i]=seat;const w=winnerOf(b),up={b:b.map(x=>x||'-').join('')};
+    if(w){up.over=true;up[seat==='X'?'s1':'s2']=scores[seat]+1;up.r=results.join('')+seat;}
+    else if(b.every(Boolean)){up.over=true;up.r=results.join('')+'T';}
+    else up.t=seat==='X'?'O':'X';
+    PV.upd(rc,up);return;
+  }
+  if(over||board[i]||locked)return;
+  board[i]=turn;
+  const w=winnerOf(board);
+  if(w){return endRound(w);}
+  if(board.every(Boolean)){return endRound(null);}
+  turn=turn==='X'?'O':'X';
+  render();
+  if(mode==='bot'&&turn==='O')botTurn();
+}
+function botTurn(){
+  locked=true;
+  setTimeout(()=>{locked=false;if(!over){const m=botMove();play(m);}},500);
+}
+function name(p){return pn[p];}
+function esc(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function endRound(w){
+  over=true;
+  if(w){
+    scores[w.p]++;results.push(w.p);
+    $('status').textContent=name(w.p)+' wins this round!';
+  }else{
+    results.push('T');
+    $('status').textContent='It’s a tie – this round will be replayed.';
+  }
+  render(w&&w.line);
+  if(w&&matchDone()){
+    const champ=scores.X>scores.O?'X':'O';
+    record(champ);
+    $('status').innerHTML='<div class="big">🏆 '+esc(name(champ))+' wins the game!</div>Final score '+scores.X+' – '+scores.O;
+    $('next').textContent='Play Again';
+    $('next').onclick=startMatch;
+  }else{
+    if(w)round++;
+    $('next').textContent=w?'Next Round':'Replay Round';
+    $('next').onclick=newRound;
+  }
+  $('next').classList.remove('hide');
+}
+
+const LBK='ttt_leaderboard';
+function lbLoad(){try{return JSON.parse(localStorage.getItem(LBK))||{};}catch(e){return {};}}
+function lbSave(d){try{localStorage.setItem(LBK,JSON.stringify(d));}catch(e){}}
+function record(champ){
+  const d=lbLoad();
+  for(const p of (mode==='bot'?['X']:['X','O'])){
+    const k=pn[p].toLowerCase();
+    const e=d[k]||(d[k]={name:pn[p],played:0,won:0,rounds:0});
+    e.played++;if(p===champ)e.won++;e.rounds+=scores[p];
+  }
+  lbSave(d);
+  if(window.PV&&PV.user)PV.add(champ==="X"?1:0,1);
+}
+async function showLB(){
+  $('menu').classList.add('hide');$('lb').classList.remove('hide');
+  const body=$('lbBody');body.innerHTML='';let d=null;
+  if(window.PV&&PV.user){try{d=await PV.top('won')}catch(e){}}
+  if(!d)d=Object.values(lbLoad()).sort((a,b)=>b.won-a.won||(b.won/b.played)-(a.won/a.played));
+  $('lbEmpty').classList.toggle('hide',d.length>0);
+  d.slice(0,20).forEach((e,i)=>{
+    const tr=document.createElement('tr');
+    [(['🥇','🥈','🥉'][i]||i+1),e.name,e.won||0,e.played||0,Math.round(100*(e.won||0)/(e.played||1))+'%'].forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.appendChild(td);});
+    body.appendChild(tr);
+  });
+}
+$('pLB').onclick=showLB;
+$('lbBack').onclick=()=>{$('lb').classList.add('hide');$('menu').classList.remove('hide');};
+$('pBot').onclick=()=>{$('diff').classList.toggle('hide');};
+document.querySelectorAll('#diff .seg button').forEach(b=>b.onclick=()=>{
+  diff=b.dataset.d;
+  document.querySelectorAll('#diff .seg button').forEach(x=>x.classList.toggle('on',x===b));
+});
+$('goBot').onclick=()=>{mode='bot';startMatch();};
+$('pFriend').onclick=()=>{mode='friend';startMatch();};
+$('quit').onclick=()=>{if(mode==='online'&&rc){PV.upd(rc,{gone:PV.user.uid});leaveOnline();return;}over=true;locked=true;$('game').classList.add('hide');$('menu').classList.remove('hide');$('diff').classList.add('hide');};
+function oNext(){if(!over||!rc)return;const dec=results.filter(r=>r!=='T').length,ties=results.length-dec;PV.upd(rc,matchDone()?{b:'---------',t:'X',s1:0,s2:0,r:'',over:false}:{b:'---------',over:false,t:((dec+1+ties)%2===1)?'X':'O'});}
+function onRoom(d){
+  if(!d){leaveOnline();return;}
+  const first=lastRec===-2,gone=!!d.gone&&d.gone!==PV.user.uid;
+  full=!!d.p2u;pn.X=d.p1n||'Player 1';pn.O=full?d.p2n:'Waiting…';
+  $('nX').textContent=pn.X;$('nO').textContent=pn.O;
+  board=[...d.b].map(x=>x==='-'?null:x);turn=d.t;scores={X:d.s1,O:d.s2};
+  results=[...d.r];round=results.filter(r=>r!=='T').length+1;over=d.over||gone;locked=false;
+  $('rcode').textContent='Room code: '+rc;$('rcode').classList.remove('hide');$('invite').classList.toggle('hide',full);
+  const w=winnerOf(board);render(d.over&&w?w.line:null);
+  if(gone){$('status').textContent='Your friend left the room.';$('next').classList.add('hide');return;}
+  if(!over){lastRec=-1;$('next').classList.add('hide');return;}
+  let champ=null;
+  if(w){
+    if(matchDone()){champ=scores.X>scores.O?'X':'O';$('status').innerHTML='<div class="big">🏆 '+esc(name(champ))+(champ===seat?' (you)':'')+' wins the game!</div>Final score '+scores.X+' – '+scores.O;$('next').textContent='Play Again';}
+    else{$('status').textContent=name(w.p)+' wins this round!';$('next').textContent='Next Round';}
+  }else{$('status').textContent='It’s a tie – this round will be replayed.';$('next').textContent='Replay Round';}
+  $('next').onclick=oNext;$('next').classList.remove('hide');
+  if(champ&&(first||lastRec!==results.length)){if(!first)PV.add(champ===seat?1:0,1);lastRec=results.length;}else if(first)lastRec=-1;
+}
+
+const genCode=()=>{const L='ABCDEFGHJKLMNPQRSTUVWXYZ';let c='';for(let i=0;i<4;i++)c+=L[Math.floor(Math.random()*L.length)];return c;};
+const oMsg=t=>{$('oMsg').textContent=t;};
+function enterRoom(c,s){mode='online';rc=c;seat=s===1?'X':'O';lastRec=-2;full=false;$('menu').classList.add('hide');$('game').classList.remove('hide');$('next').classList.add('hide');$('invite').textContent='Share invite link';unsub=PV.sub(c,onRoom);}
+async function oCreate(){oMsg('Creating room…');for(let n=0;n<6;n++){const c=genCode();if(await PV.create(c,{p1u:PV.user.uid,p1n:PV.name,p2u:'',p2n:'',b:'---------',t:'X',s1:0,s2:0,r:'',over:false,gone:''})){oMsg('');enterRoom(c,1);return;}}oMsg('Could not create a room. Try again.');}
+async function doJoin(c){c=String(c||'').trim().toUpperCase();if(c.length!==4){oMsg('Enter the 4-letter room code.');return;}oMsg('Joining…');const r=await PV.join(c);if(r.err){oMsg(r.err);return;}oMsg('');enterRoom(c,r.seat);}
+function leaveOnline(){if(unsub){unsub();unsub=null;}rc=null;mode='friend';full=false;seat='X';$('game').classList.add('hide');$('menu').classList.remove('hide');$('onl').classList.add('hide');$('rcode').classList.add('hide');$('invite').classList.add('hide');}
+$('pOnline').onclick=()=>$('onl').classList.toggle('hide');
+$('oCreate').onclick=oCreate;$('oJoin').onclick=()=>doJoin($('oCode').value);
+$('invite').onclick=async()=>{const u=location.origin+location.pathname+'?room='+rc;try{if(navigator.share)await navigator.share({title:'X-O Duel',text:'Join my game! Room code '+rc,url:u});else{await navigator.clipboard.writeText(u);$('invite').textContent='Link copied ✓';}}catch(e){}};
+document.addEventListener('pv-ready',()=>{$('p1').value=PV.name;const q=(new URLSearchParams(location.search).get('room')||'').toUpperCase();if(q){$('onl').classList.remove('hide');doJoin(q);}});
+</script>
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/12.4.0/firebase-app.js";
+import{getAuth,GoogleAuthProvider,signInWithPopup,signInWithRedirect,linkWithPopup,signInWithCredential,onAuthStateChanged,signOut}from"https://www.gstatic.com/firebasejs/12.4.0/firebase-auth.js";
+import{getFirestore,doc,getDoc,setDoc,updateDoc,onSnapshot,runTransaction,increment,serverTimestamp,collection,query,orderBy,limit,getDocs}from"https://www.gstatic.com/firebasejs/12.4.0/firebase-firestore.js";
+const app=initializeApp({apiKey:"AIzaSyDHcp44KXR6Gax_Vf3fwdinWBgJB4l_92Y",authDomain:"clue-rush-a7bbe.firebaseapp.com",projectId:"clue-rush-a7bbe",storageBucket:"clue-rush-a7bbe.firebasestorage.app",messagingSenderId:"439710542707",appId:"1:439710542707:web:b55e0a8f2c309b86e8b306"}),auth=getAuth(app),fs=getFirestore(app),COLL="xoduel";
+const g=document.getElementById("pvgate"),b=document.getElementById("pvbtn"),m=document.getElementById("pvmsg");
+const ref=()=>doc(fs,COLL,PV.user.uid),rr=c=>doc(fs,COLL+"Rooms",c);
+window.PV={user:null,name:"",
+  async add(w,p){try{await setDoc(ref(),{name:PV.name,won:increment(w),played:increment(p),at:serverTimestamp()},{merge:true})}catch(e){}},
+  async best(sc,k){try{const s=await getDoc(ref()),c=s.exists()?(s.data().best||0):0;if(sc>c)await setDoc(ref(),{name:PV.name,best:sc,kills:k,at:serverTimestamp()},{merge:true});return Math.max(sc,c)}catch(e){return sc}},
+  async mine(){try{const s=await getDoc(ref());return s.exists()?s.data():{}}catch(e){return {}}},
+  async top(f){const q=await getDocs(query(collection(fs,COLL),orderBy(f,"desc"),limit(20)));return q.docs.map(d=>({id:d.id,...d.data()}))},
+  async create(c,d){try{const r=rr(c),s=await getDoc(r);if(s.exists())return false;await setDoc(r,{...d,at:serverTimestamp()});return true}catch(e){return false}},
+  async join(c){try{return await runTransaction(fs,async t=>{const r=rr(c),s=await t.get(r);if(!s.exists())return{err:"No room with that code."};const d=s.data(),me=PV.user.uid;if(d.gone)return{err:"That room has closed."};if(d.p1u===me)return{seat:1};if(d.p2u===me)return{seat:2};if(d.p2u)return{err:"That room is full."};t.update(r,{p2u:me,p2n:PV.name});return{seat:2}})}catch(e){return{err:"Could not join. Try again."}}},
+  sub(c,cb){return onSnapshot(rr(c),s=>cb(s.exists()?s.data():null),()=>{})},
+  async upd(c,d){try{await updateDoc(rr(c),d)}catch(e){}},
+  out(){signOut(auth).finally(()=>location.reload())}};
+b.onclick=async()=>{const pr=new GoogleAuthProvider(),cu=auth.currentUser;try{
+  if(cu&&cu.isAnonymous){try{await linkWithPopup(cu,pr)}catch(e){if(e&&e.code==="auth/credential-already-in-use")await signInWithCredential(auth,GoogleAuthProvider.credentialFromError(e));else throw e}}
+  else await signInWithPopup(auth,pr);
+  if(auth.currentUser&&!auth.currentUser.isAnonymous)enter(auth.currentUser)}
+  catch(e){const c=e&&e.code;if(c==="auth/popup-blocked"||c==="auth/operation-not-supported-in-this-environment")signInWithRedirect(auth,pr);else if(c!=="auth/popup-closed-by-user"&&c!=="auth/cancelled-popup-request")m.textContent="Sign-in failed. Please try again."}};
+function enter(u){if(PV.user)return;PV.user=u;PV.name=String(u.displayName||"Player").split(" ")[0].slice(0,12);g.remove();document.dispatchEvent(new Event("pv-ready"))}
+onAuthStateChanged(auth,u=>{if(u&&!u.isAnonymous)enter(u);else if(!PV.user){m.textContent="Sign in with Google to play.";b.style.display=""}});
+</script>
+</body>
+</html>
